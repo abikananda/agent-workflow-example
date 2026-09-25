@@ -1,6 +1,6 @@
 # Agent workflow example
 
-Spring Boot 3.5, Java 17, Google ADK Java, LangChain4j, Kafka, MySQL. One application hosts two independent ADK `SequentialAgent` roots. Each root has three custom `BaseAgent` subagents. ADK executes the stages; `TypedPipeline` checks each Java input/output type at registration and stores the handoff by ADK session ID. LangChain4j calls local Ollama only in the execution subagent. Persistence subagents are deterministic.
+Spring Boot 3.5, Java 17, Google ADK Java, LangChain4j, Kafka, MySQL. One application hosts two independent ADK `SequentialAgent` roots. Work has two custom deterministic `BaseAgent` subagents and one real ADK `LlmAgent` subagent. Google's `google-adk-langchain4j` bridge connects that `LlmAgent` to local Ollama. ADK Java has no `NonLlmAgent` class; deterministic subagents extend `BaseAgent`. Persistence has three deterministic `BaseAgent` subagents. `TypedPipeline` validates persistence stage types and stores the handoff by ADK session ID.
 
 ## Requirements
 
@@ -37,7 +37,7 @@ Example Kafka value (the UUIDs must correspond to an existing submitted work):
 
 ## Add a subagent
 
-Create `TypedStep<PreviousOutput, NewOutput>` with `name()`, `inputType()`, `outputType()`, and `apply()`. In `WorkAgentConfig` or `PersistenceAgentConfig`, insert `.then(newStep)` at the required position. The compiler checks the surrounding generic types; `TypedPipeline` checks the declared runtime classes. Leave the controller, consumer, and Kafka producer untouched. Do not assign the same name to two steps in one hierarchy. The pipeline scope is removed after each ADK run.
+For persistence, create `TypedStep<PreviousOutput, NewOutput>` with `name()`, `inputType()`, `outputType()`, and `apply()`. In `PersistenceAgentConfig`, insert `.then(newStep)` at the required position. The compiler checks the surrounding generic types and `TypedPipeline` checks declared runtime classes. For work, add a `BaseAgent` deterministic stage or build another `LlmAgent` and insert it into the `stages` list in `WorkAgent.execute`. Exchange text through ADK session state using `EventActions.stateDelta` and `outputKey`; validate the state value in the next deterministic stage. Leave the controller, consumer, and Kafka producer untouched. Do not assign duplicate agent names within a root.
 
 ## Tests
 

@@ -1,6 +1,5 @@
 package com.example.workflow.work;
 
-import com.example.workflow.agents.AdkExecutor;
 import com.example.workflow.db.*;
 import com.example.workflow.model.Contracts.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,11 +20,11 @@ public class WorkService {
     private static final Logger log = LoggerFactory.getLogger(WorkService.class);
     private final WorkItemRepository items;
     private final WorkResultRepository results;
-    private final AdkExecutor<WorkRequest, Reviewed> agent;
+    private final WorkAgent agent;
     private final KafkaTemplate<String, String> kafka;
     private final ObjectMapper mapper;
     private final String topic;
-    public WorkService(WorkItemRepository items, WorkResultRepository results, AdkExecutor<WorkRequest, Reviewed> workAgent,
+    public WorkService(WorkItemRepository items, WorkResultRepository results, WorkAgent workAgent,
                        KafkaTemplate<String, String> kafka, ObjectMapper mapper, @Value("${app.topic}") String topic) {
         this.items = items; this.results = results; this.agent = workAgent;
         this.kafka = kafka; this.mapper = mapper; this.topic = topic;

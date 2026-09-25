@@ -2,6 +2,9 @@ package com.example.workflow;
 
 import com.example.workflow.db.WorkResultRepository;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.data.message.AiMessage;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,7 +20,7 @@ import org.testcontainers.utility.DockerImageName;
 import java.time.Duration;
 import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -37,8 +40,10 @@ class WorkflowIntegrationTest {
     @LocalServerPort int port;
 
     @Test void requestTravelsThroughKafkaAndIsSavedOnce() throws Exception {
-        when(chatModel.chat(anyString())).thenReturn("Kafka coordinates event-driven applications. "
-                + "It carries records between independent services and can retry consumers safely.");
+        when(chatModel.chat(any(ChatRequest.class))).thenReturn(ChatResponse.builder()
+                .aiMessage(AiMessage.from("Kafka coordinates event-driven applications. "
+                        + "It carries records between independent services and can retry consumers safely."))
+                .build());
         String base = "http://localhost:" + port + "/api/work";
         ResponseEntity<Map> response = rest.postForEntity(base, Map.of("topic", "Kafka"), Map.class);
         assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
