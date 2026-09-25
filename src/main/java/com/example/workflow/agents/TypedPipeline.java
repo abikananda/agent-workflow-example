@@ -29,19 +29,20 @@ public final class TypedPipeline<I, O> {
         private final String name;
         private final Class<I> inputType;
         private final Class<C> currentType;
-        private final List<TypedStep<?, ?>> steps;
-        private Builder(String name, Class<I> inputType, Class<C> currentType, List<TypedStep<?, ?>> steps) {
+        private final List<TypedStageAgent<?, ?>> steps;
+        private Builder(String name, Class<I> inputType, Class<C> currentType, List<TypedStageAgent<?, ?>> steps) {
             this.name = name; this.inputType = inputType; this.currentType = currentType; this.steps = steps;
         }
-        public <N> Builder<I, N> then(TypedStep<C, N> step) {
+        public <N> Builder<I, N> then(TypedStageAgent<C, N> step) {
             if (!currentType.equals(step.inputType())) throw new IllegalArgumentException("Invalid stage input: " + step.name());
-            List<TypedStep<?, ?>> next = new ArrayList<>(steps); next.add(step);
+            List<TypedStageAgent<?, ?>> next = new ArrayList<>(steps); next.add(step);
             return new Builder<>(name, inputType, step.outputType(), next);
         }
         public TypedPipeline<I, C> build() {
             if (steps.isEmpty()) throw new IllegalStateException("Pipeline needs at least one subagent");
             Map<String, Object> scope = new ConcurrentHashMap<>();
-            List<BaseAgent> agents = steps.stream().map(step -> (BaseAgent) new StepAgent<>(step, scope)).toList();
+            steps.forEach(step -> step.bind(scope));
+            List<BaseAgent> agents = new ArrayList<>(steps);
             return new TypedPipeline<>(inputType, currentType,
                     SequentialAgent.builder().name(name).subAgents(agents).build(), scope);
         }

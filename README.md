@@ -1,6 +1,6 @@
 # Agent workflow example
 
-Spring Boot 3.5, Java 17, Google ADK Java, LangChain4j, Kafka, MySQL. One application hosts two independent ADK `SequentialAgent` roots. Work has two custom deterministic `BaseAgent` subagents and one real ADK `LlmAgent` subagent. Google's `google-adk-langchain4j` bridge connects that `LlmAgent` to local Ollama. ADK Java has no `NonLlmAgent` class; deterministic subagents extend `BaseAgent`. Persistence has three deterministic `BaseAgent` subagents. `TypedPipeline` validates persistence stage types and stores the handoff by ADK session ID.
+Spring Boot 3.5, Java 17, Google ADK Java, LangChain4j, Kafka, MySQL. One application hosts two independent ADK `SequentialAgent` roots. Every subagent is a separate class. Work uses `AnalysisSubagent`, `ExecutionSubagent` (factory for a real ADK `LlmAgent`), and `ReviewSubagent`. Google's `google-adk-langchain4j` bridge connects that `LlmAgent` to local Ollama. ADK Java has no `NonLlmAgent` class; deterministic subagents extend `BaseAgent`. Persistence uses `ValidationSubagent`, `TransformationSubagent`, and `StorageSubagent`, which extend `TypedStageAgent` (a typed `BaseAgent`). `TypedPipeline` validates their input and output contracts.
 
 ## Requirements
 
@@ -37,7 +37,7 @@ Example Kafka value (the UUIDs must correspond to an existing submitted work):
 
 ## Add a subagent
 
-For persistence, create `TypedStep<PreviousOutput, NewOutput>` with `name()`, `inputType()`, `outputType()`, and `apply()`. In `PersistenceAgentConfig`, insert `.then(newStep)` at the required position. The compiler checks the surrounding generic types and `TypedPipeline` checks declared runtime classes. For work, add a `BaseAgent` deterministic stage or build another `LlmAgent` and insert it into the `stages` list in `WorkAgent.execute`. Exchange text through ADK session state using `EventActions.stateDelta` and `outputKey`; validate the state value in the next deterministic stage. Leave the controller, consumer, and Kafka producer untouched. Do not assign duplicate agent names within a root.
+For persistence, create a separate class extending `TypedStageAgent<PreviousOutput, NewOutput>`. Implement `inputType()`, `outputType()`, and `execute()`. Register it with `.then(newStep)` at the required position in `PersistenceAgentConfig`. The compiler checks adjoining generic types and `TypedPipeline` checks the declared runtime classes. For work, create a separate `BaseAgent` class for deterministic behavior or a factory for another `LlmAgent`; insert the resulting agent into `WorkAgent.execute`'s ordered `stages` list. Exchange text through ADK session state using `EventActions.stateDelta` and `outputKey`; validate the value when reading it. Leave the controller, consumer, and Kafka producer untouched. Use unique agent names within a root.
 
 ## Tests
 
