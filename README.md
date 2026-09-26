@@ -4,8 +4,10 @@ Spring Boot 3.5, Java 17, Google ADK Java, LangChain4j, Kafka, MySQL. One applic
 
 ## Requirements
 
-- JDK 17+, Maven 3.9+, Docker (for Kafka and optional integration tests)
+- JDK 17+, Maven 3.9+, a locally running Apache Kafka broker at `localhost:9092`
 - Local MySQL 8 and Ollama with `llama3.2:3b` (`ollama pull llama3.2:3b`)
+
+Install and start Kafka using the [Apache Kafka quickstart](https://kafka.apache.org/quickstart/). On Windows, run Kafka's `bin\windows\*.bat` scripts from its extracted directory. Configure the broker to advertise an address reachable from this application; the default `KAFKA_BOOTSTRAP_SERVERS` is `localhost:9092`. The application creates its two Kafka topics on startup. Kafka must be running before you start the application.
 
 ```sql
 CREATE DATABASE agent_workflow CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -15,10 +17,7 @@ GRANT ALL PRIVILEGES ON agent_workflow.* TO 'agent_workflow'@'localhost';
 
 Set `DB_URL=jdbc:mysql://localhost:3306/agent_workflow?useSSL=false&allowPublicKeyRetrieval=true`, `DB_USER=agent_workflow`, `DB_PASSWORD=choose-a-password`. Optionally set `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, and `KAFKA_BOOTSTRAP_SERVERS`. Windows PowerShell example: `$env:DB_USER='agent_workflow'`; set the other values similarly. No credentials are checked in.
 
-```bash
-docker compose up -d
-mvn spring-boot:run
-```
+Start your local Kafka broker, MySQL, and Ollama, then run `mvn spring-boot:run` from this project directory.
 
 ```bash
 curl -i -H 'Content-Type: application/json' -d '{"topic":"Kafka"}' http://localhost:8080/api/work
@@ -41,7 +40,7 @@ For persistence, create a separate class extending `TypedStageAgent<PreviousOutp
 
 ## Tests
 
-Run `mvn test`. `TypedPipelineTest` checks the actual ADK sequence. `WorkflowIntegrationTest` uses Testcontainers Kafka/MySQL and a mocked LangChain4j model to verify the HTTP → ADK → Kafka → ADK → MySQL path. Docker must be available for integration tests. Flyway creates the tables; Hibernate validates the schema.
+Run `mvn test`. `TypedPipelineTest` checks the actual ADK sequence. `WorkflowIntegrationTest` uses Spring's embedded Kafka broker, an H2 test database, and a mocked LangChain4j model to verify HTTP → ADK → Kafka → ADK → database without Docker or external services. Flyway creates the MySQL tables in the running application; the integration test uses Hibernate to create an equivalent temporary H2 schema. The MySQL Flyway migration is therefore not exercised by that test.
 
 ## Current limits
 
