@@ -49,8 +49,11 @@ public class WorkService {
                 log.info("Published completed work");
             }
         } catch (Exception ex) {
-            log.error("Work processing failed", ex);
-            update(id, "FAILED", ex.getMessage());
+            Throwable root = ex;
+            while (root.getCause() != null && root.getCause() != root) root = root.getCause();
+            log.error("Work processing failed workId={} causeType={} causeMessage={}",
+                    id, root.getClass().getSimpleName(), root.getMessage(), ex);
+            update(id, "FAILED", root.getClass().getSimpleName() + ": " + root.getMessage());
         }
         return CompletableFuture.completedFuture(null);
     }

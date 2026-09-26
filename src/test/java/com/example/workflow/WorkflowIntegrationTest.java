@@ -55,4 +55,20 @@ class WorkflowIntegrationTest {
         assertEquals("SAVED", status.get("status"), "workflow state: " + status);
         assertTrue(results.existsById(id));
     }
+
+    @Test void modelFailureIsVisibleOnWorkStatus() throws Exception {
+        when(chatModel.chat(any(ChatRequest.class))).thenThrow(new IllegalStateException("Model unavailable for test"));
+        String base = "http://localhost:" + port + "/api/work";
+        ResponseEntity<Map> response = rest.postForEntity(base, Map.of("topic", "Unavailable model"), Map.class);
+        String id = (String) response.getBody().get("workId");
+        long deadline = System.nanoTime() + Duration.ofSeconds(15).toNanos();
+        Map status = Map.of();
+        while (System.nanoTime() < deadline) {
+            status = rest.getForObject(base + "/" + id, Map.class);
+            if ("FAILED".equals(status.get("status"))) break;
+            Thread.sleep(200);
+        }
+        assertEquals("FAILED", status.get("status"), "workflow state: " + status);
+        assertTrue(String.valueOf(status.get("error")).contains("Model unavailable for test"));
+    }
 }

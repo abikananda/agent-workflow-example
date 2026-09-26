@@ -17,6 +17,8 @@ GRANT ALL PRIVILEGES ON agent_workflow.* TO 'agent_workflow'@'localhost';
 
 Set `DB_URL=jdbc:mysql://localhost:3306/agent_workflow?useSSL=false&allowPublicKeyRetrieval=true`, `DB_USER=agent_workflow`, `DB_PASSWORD=choose-a-password`. Optionally set `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, and `KAFKA_BOOTSTRAP_SERVERS`. Windows PowerShell example: `$env:DB_USER='agent_workflow'`; set the other values similarly. No credentials are checked in.
 
+For a work item that stays in `PROCESSING`, check Ollama from PowerShell with `Invoke-RestMethod http://localhost:11434/api/tags` and confirm `llama3.2:3b` is installed. Then poll `GET /api/work/{workId}` and inspect the Spring Boot console for `ADK stage event` or `ADK workflow failed`. `OLLAMA_TIMEOUT` defaults to `PT60S`; the full ADK workflow has a 90-second limit. A failed work item contains the root error in its `error` field. Submit a new POST after fixing the cause; an earlier in-progress request is not automatically replayed.
+
 Start your local Kafka broker, MySQL, and Ollama, then run `mvn spring-boot:run` from this project directory.
 
 ```bash

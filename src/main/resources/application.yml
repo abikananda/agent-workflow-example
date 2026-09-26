@@ -30,3 +30,4 @@ app:
   ollama:
     base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
     model: ${OLLAMA_MODEL:llama3.2:3b}
+    timeout: ${OLLAMA_TIMEOUT:PT60S}
