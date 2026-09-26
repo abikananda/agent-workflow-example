@@ -45,7 +45,7 @@ public class WorkService {
                 String json = mapper.writeValueAsString(new WorkCompletedEvent(eventId, id, 1, Instant.now(), reviewed));
                 kafka.send(topic, id, json).get(30, TimeUnit.SECONDS);
                 // The consumer can save before this completes. Never downgrade SAVED.
-                items.markPublished(id);
+                items.markPublished(id, Instant.now());
                 log.info("Published completed work");
             }
         } catch (Exception ex) {
